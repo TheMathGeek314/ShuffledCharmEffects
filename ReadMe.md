@@ -13,4 +13,10 @@ Some quirks of specific charms include:
 - The first three grimmkin flames can be collected regardless of whether the troupe has been summoned
 - The charm that imitates Kingsoul can be equipped at any time but will have no effect until both fragments have been obtained
 
+### Mod Interop
+- Charm mods such as **Transcendence**, **MidasTouch**, and anything else using SFCore's *EasyCharm* will be included if installed
+	- These have a known visual glitch where sitting on a bench will appear to equip a mimicked charm or unequip one of the additional charms, but they should mechanically function as expected
+	- The additional charms will be shuffled if the mod is even installed, regardless of whether the charms may exist (i.e. disabling Transcendence in Rando)
+- It is now possible to shuffle charms in a rando file (which didn't work in this mod's initial release)
+
 *Special thanks to BirdiestBlue for commissioning this mod*

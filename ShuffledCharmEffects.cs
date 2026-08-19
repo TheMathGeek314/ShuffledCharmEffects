@@ -1,6 +1,7 @@
 ﻿using Modding;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using HutongGames.PlayMaker;
 using Satchel;
@@ -8,7 +9,8 @@ using Satchel;
 namespace ShuffledCharmEffects {
     public class ShuffledCharmEffects: Mod, ILocalSettings<LocalSettings> {
         new public string GetName() => "ShuffledCharmEffects";
-        public override string GetVersion() => "1.0.0.1";
+        public override string GetVersion() => "1.1.0.0";
+        public override int LoadPriority() => -3;
 
         public static LocalSettings localData { get; set; } = new();
         public void OnLoadLocal(LocalSettings s) => localData = s;
@@ -17,16 +19,24 @@ namespace ShuffledCharmEffects {
         public override void Initialize(Dictionary<string, Dictionary<string, GameObject>> preloadedObjects) {
             On.PlayerData.GetBool += getBoolRecharm;
             On.PlayMakerFSM.OnEnable += editFsm;
-            On.GameManager.StartNewGame += initialSetup;
+            On.GameManager.StartNewGame += onStartGame;
+            if(ModHooks.GetMod("Randomizer 4") is Mod) {
+                initializeForRando();
+            }
+        }
+
+        private void initializeForRando() {
+            RandomizerMod.RC.RandoController.OnExportCompleted += rc => initialSetup();
         }
 
         private bool getBoolRecharm(On.PlayerData.orig_GetBool orig, PlayerData self, string boolName) {
-            if(boolName.StartsWith("equippedCharm_")) {
-                if(!Environment.StackTrace.Contains("CalculateNotchesUsed")) {
-                    int origID = int.Parse(boolName.Split('_')[1]);
-                    if(origID <= 40) {
-                        boolName = "equippedCharm_" + localData.shuffledIDs[origID - 1];
-                    }
+            if(boolName.StartsWith("equippedCharm_") && !Environment.StackTrace.Contains("CalculateNotchesUsed")) {
+                int origID = int.Parse(boolName.Split('_')[1]);
+                try {
+                    return orig(self, "equippedCharm_" + localData.shuffledIDs[origID - 1]);
+                }
+                catch(ArgumentOutOfRangeException) {
+                    return orig(self, boolName);
                 }
             }
             return orig(self, boolName);
@@ -41,8 +51,12 @@ namespace ShuffledCharmEffects {
             }
         }
 
-        private void initialSetup(On.GameManager.orig_StartNewGame orig, GameManager self, bool permadeathMode, bool bossRushMode) {
+        private void onStartGame(On.GameManager.orig_StartNewGame orig, GameManager self, bool permadeathMode, bool bossRushMode) {
             orig(self, permadeathMode, bossRushMode);
+            initialSetup();
+        }
+
+        private void initialSetup() {
             localData.shuffledIDs = createIDs();
         }
 
@@ -50,7 +64,8 @@ namespace ShuffledCharmEffects {
             System.Random rand = new();
             List<int> numbers = new();
             List<int> output = new();
-            for(int i = 1; i <= 40; i++) {
+            int max = ModHooks.GetMod("SFCore") is Mod ? GetMaxCharms() : 40;
+            for(int i = 1; i <= max; i++) {
                 numbers.Add(i);
             }
             while(numbers.Count > 0) {
@@ -59,6 +74,11 @@ namespace ShuffledCharmEffects {
                 numbers.RemoveAt(index);
             }
             return output;
+        }
+
+        private int GetMaxCharms() {
+            List<Sprite> CustomSprites = typeof(SFCore.CharmHelper).GetField("CustomSprites", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null) as List<Sprite>;
+            return CustomSprites.Count + 40;
         }
     }
 
@@ -73,9 +93,7 @@ namespace ShuffledCharmEffects {
             string fsmString = fsm.FsmVariables.GetFsmString("Item Num String").Value;
             int currentID = int.Parse(fsmString);
             int revertedID = currentID;
-            if(currentID <= 40) {
-                revertedID = ShuffledCharmEffects.localData.shuffledIDs.IndexOf(currentID) + 1;
-            }
+            revertedID = ShuffledCharmEffects.localData.shuffledIDs.IndexOf(currentID) + 1;
             fsm.FsmVariables.GetFsmString("PlayerData Var Name").Value = "equippedCharm_" + revertedID;
         }
     }

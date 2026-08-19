@@ -88,8 +88,14 @@
     <Reference Include="PlayMaker">
       <HintPath>$(HollowKnightRefs)/PlayMaker.dll</HintPath>
     </Reference>
+    <Reference Include="RandomizerMod">
+      <HintPath>..\_dependencies\RandomizerMod.dll</HintPath>
+    </Reference>
     <Reference Include="Satchel">
       <HintPath>..\_dependencies\Satchel.dll</HintPath>
+    </Reference>
+    <Reference Include="SFCore">
+      <HintPath>..\_dependencies\SFCore.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.Composition">
       <HintPath>$(HollowKnightRefs)/System.ComponentModel.Composition.dll</HintPath>
